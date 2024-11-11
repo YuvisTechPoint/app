@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe Game</title>
+  <!-- Link to Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Solway:wght@700&display=swap" rel="stylesheet">
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Solway', serif; /* Apply the Solway Font */
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+     background:linear-gradient(to left,#7808f0,#06bdf5); /* Yellow background */
+    }
+
+    /* Game Container */
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      font-size: 4.5em; /* Enlarged font size */
+      color: #333;
+      margin-bottom: 10px; /* Reduced margin to move it up */
+      margin-top: -20px; /* Move it up further */
+    }
+
+    /* Turn Indicator */
+    .turn-indicator {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    /* Board Styles */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+      border: 10px solid transparent; /* Transparent border for the gradient effect */
+      border-radius: 15px;
+      background: linear-gradient(135deg, #74ebd5, #acb6e5); /* Gradient background */
+      padding: 5px; /* Padding to create space for the border */
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent white */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.5em;
+      color: #4caf50;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .cell:hover {
+      background-color: rgba(241, 241, 241, 0.8);
+      transform: scale(1.05);
+    }
+    .cell.X { color: #0ee170; }
+    .cell.O { color: #2196f3; }
+
+    /* Modal Styles */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto; /* 15% from the top and centered */
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%; /* Could be more or less, depending on screen size */
+      text-align: center;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* Responsive Styling */
+    @media (max-width: 600px) {
+      .board {
+        grid-template-columns: repeat(3, 80px);
+        grid-template-rows: repeat(3, 80px);
+      }
+      .cell {
+        width: 80px;
+        height: 80px;
+        font-size: 2em;
+      }
+      h1 {
+        font-size: 2.5em; /* Adjusted for smaller screens */
+      }
+    }
+
+    /* Message Styles */
+    .message {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #333;
+    }
+    .restart-btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background: linear-gradient(135deg, #0077b6, #388e3c); /* Gradient background */
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .restart-btn:hover {
+      background: linear-gradient(135deg, #005f8a, #2e7d2b); /* Darker gradient on hover */
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Tic Tac Toe</h1>
+    <div class="turn-indicator" id="turnIndicator">X's turn</div>
+    <div class="board" id="board">
+      <div class="cell" data-index="0"></div>
+      <div class="cell" data-index="1"></div>
+      <div class="cell" data-index="2"></div>
+      <div class="cell" data-index="3"></div>
+      <div class="cell" data-index="4"></div>
+      <div class="cell" data-index="5"></div>
+      <div class="cell" data-index="6"></div>
+      <div class="cell" data-index="7"></div>
+      <div class="cell" data-index="8"></div>
+    </div>
+    <div class="message" id="message"></div>
+    <button class="restart-btn" id="restartButton">Restart Game</button>
+  </div>
+
+  <!-- Modal for displaying winner -->
+  <div class="modal" id="winnerModal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <p id="winnerMessage"></p>
+      <button class="restart-btn" onclick="restartGame()">Restart Game</button>
+    </div>
+  </div>
+
+  <script>
+    const board = document.getElementById('board');
+    const message = document.getElementById('message');
+    const turnIndicator = document.getElementById('turnIndicator');
+    const winnerModal = document.getElementById('winnerModal');
+    const winnerMessage = document.getElementById('winnerMessage');
+    const closeModal = document.getElementById('closeModal');
+    let currentPlayer = 'X';
+    let gameState = Array(9).fill('');
+    let isGameActive = true;
+
+    // Winning combinations
+    const winningCombos = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    // Click event for cells
+    board.addEventListener('click', function(event) {
+      if (isGameActive && event.target.classList.contains('cell')) {
+        const index = event.target.dataset.index;
+        if (gameState[index] === '') {
+          gameState[index] = currentPlayer;
+          event.target.textContent = currentPlayer;
+          event.target.classList.add(currentPlayer);
+          checkGameResult();
+          currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+          turnIndicator.textContent = `${currentPlayer}'s turn`; // Update turn indicator
+        }
+      }
+    });
+
+    // Check for win or draw
+    function checkGameResult() {
+      let roundWon = false;
+      for (let i = 0; i < winningCombos.length; i++) {
+        const [a, b, c] = winningCombos[i];
+        if (gameState[a] === '' || gameState[b] === '' || gameState[c] === '') {
+          continue;
+        }
+        if (gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
+          roundWon = true;
+          break;
+        }
+      }
+
+      if (roundWon) {
+        winnerMessage.textContent = `${currentPlayer} wins!`;
+        winnerModal.style.display = "block"; // Show the modal
+        isGameActive = false;
+        return;
+      }
+
+      if (!gameState.includes('')) {
+        winnerMessage.textContent = "It's a draw!";
+        winnerModal.style.display = "block"; // Show the modal
+        isGameActive = false;
+      }
+    }
+
+    // Restart the game
+    function restartGame() {
+      currentPlayer = 'X';
+      gameState = Array(9).fill('');
+      isGameActive = true;
+      message.textContent = '';
+      turnIndicator.textContent = `${currentPlayer}'s turn`; // Reset turn indicator
+      document.querySelectorAll('.cell').forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('X', 'O');
+      });
+      winnerModal.style.display = "none"; // Hide the modal
+    }
+
+    // Close modal
+    closeModal.onclick = function() {
+      winnerModal.style.display = "none";
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+      if (event.target === winnerModal) {
+        winnerModal.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>
